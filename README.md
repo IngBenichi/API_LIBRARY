@@ -1,9 +1,6 @@
-Here's the revised Markdown documentation that includes a section about the fuzzy AHP method:
-
-```markdown
 # FastAPI Application for AHP Calculation
 
-This code creates a FastAPI-based web application that calculates the Analytic Hierarchy Process (AHP) using predefined datasets and the `pyDecision` library. The app is designed to be a simple API for calculating AHP with different weight derivation methods.
+This code creates a FastAPI-based web application that calculates the Analytic Hierarchy Process (AHP) using a predefined dataset and the `pyDecision` library. The app is designed to be a simple API for calculating AHP with different weight derivation methods.
 
 ## Key Components
 
@@ -20,18 +17,6 @@ This code creates a FastAPI-based web application that calculates the Analytic H
 
 3. **Static Dataset:**
    A pairwise comparison matrix (`STATIC_DATASET`) is defined as a NumPy array, representing criteria weights for the AHP calculation. 
-
-   ```python
-   STATIC_DATASET = np.array([
-       [1,     1/3,   1/5,   1,     1/4,   1/2,   3],   # g1
-       [3,     1,     1/2,   2,     1/3,   3,     3],   # g2
-       [5,     2,     1,     4,     5,     6,     5],   # g3
-       [1,     1/2,   1/4,   1,     1/4,   1,     2],   # g4
-       [4,     3,     1/5,   4,     1,     3,     2],   # g5
-       [2,     1/3,   1/6,   1,     1/3,   1,     1/3], # g6
-       [1/3,   1/3,   1/5,   1/2,   1/2,   3,     1]    # g7
-   ])
-   ```
 
 4. **Input Data Model:**
    An input model `AHPRequest` is defined, using `BaseModel` from `pydantic`. It contains:
@@ -81,51 +66,4 @@ This code creates a FastAPI-based web application that calculates the Analytic H
 }
 ```
 
-6. **Fuzzy AHP Method:**
-   The fuzzy AHP method allows for more nuanced comparisons by using fuzzy numbers to represent uncertainties in judgments. This method is particularly useful when exact values are difficult to determine, enabling decision-makers to express their preferences in a range rather than as precise numbers. 
-
-   In this application, a second dataset is used for fuzzy AHP calculations, which consists of fuzzy pairwise comparisons.
-
-   ```python
-   dataset = [
-       [(1, 1, 1), (4, 5, 6), (3, 4, 5), (6, 7, 8)],   # g1
-       [(1/6, 1/5, 1/4), (1, 1, 1), (1/3, 1/2, 1), (2, 3, 4)],   # g2
-       [(1/5, 1/4, 1/3), (1, 2, 3), (1, 1, 1), (2, 3, 4)],   # g3
-       [(1/8, 1/7, 1/6), (1/4, 1/3, 1/2), (1/4, 1/3, 1/2), (1, 1, 1)]    # g4
-   ]
-   ```
-
-## Endpoint: `/fuzzy-ahp`
-
-- **Method**: GET
-- **Response**:
-  - Returns a JSON object with the following fields:
-    - `"dataset"`: The dataset used for calculations.
-    - `"fuzzy_weights"`: Fuzzy weights rounded to three decimal places.
-    - `"crisp_weights"`: Crisp weights rounded to three decimal places.
-    - `"normalized_weights"`: Normalized weights rounded to three decimal places.
-    - `"consistency_ratio"`: The consistency ratio rounded to two decimal places.
-    - `"consistency_message"`: A message indicating whether the solution is consistent.
-
-## Example Response for Fuzzy AHP
-
-```json
-{
-  "dataset": [
-    [(1, 1, 1), (4, 5, 6), (3, 4, 5), (6, 7, 8)],
-    [(1/6, 1/5, 1/4), (1, 1, 1), (1/3, 1/2, 1), (2, 3, 4)],
-    [(1/5, 1/4, 1/3), (1, 2, 3), (1, 1, 1), (2, 3, 4)],
-    [(1/8, 1/7, 1/6), (1/4, 1/3, 1/2), (1/4, 1/3, 1/2), (1, 1, 1)]
-  ],
-  "fuzzy_weights": [[0.2, 0.3, 0.5], [0.1, 0.2, 0.7]],
-  "crisp_weights": [0.15, 0.25, 0.45, 0.15],
-  "normalized_weights": [0.15, 0.25, 0.45, 0.15],
-  "consistency_ratio": 0.08,
-  "consistency_message": "The solution is consistent"
-}
-```
-
-This application provides a straightforward way to perform AHP calculations using predefined pairwise comparison matrices, making it useful for decision-making scenarios.
-```
-
-Feel free to make any additional changes or let me know if you need further adjustments!
+This application provides a straightforward way to perform AHP calculations using a predefined pairwise comparison matrix, making it useful for decision-making scenarios.
