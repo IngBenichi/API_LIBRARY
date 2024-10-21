@@ -1,131 +1,178 @@
-Here's the revised Markdown documentation that includes a section about the fuzzy AHP method:
+Here is the Markdown documentation for the provided FastAPI code in English:
 
 
-# FastAPI Application for AHP Calculation
+# FastAPI Application for AHP Calculations
 
-This code creates a FastAPI-based web application that calculates the Analytic Hierarchy Process (AHP) using predefined datasets and the `pyDecision` library. The app is designed to be a simple API for calculating AHP with different weight derivation methods.
+This FastAPI application provides endpoints for calculating the Analytic Hierarchy Process (AHP) using various methods including standard AHP, fuzzy AHP, and pairwise comparison fuzzy AHP.
 
-## Key Components
+## Required Libraries
 
-1. **Libraries and Dependencies:**
-   - `FastAPI`: A Python web framework for building APIs.
-   - `HTTPException`: Used to handle HTTP exceptions.
-   - `BaseModel` from `pydantic`: Used to define data models.
-   - `numpy`: For numerical operations.
-   - `pyDecision.algorithm.ahp_method`: The AHP algorithm from the `pyDecision` library.
-   - `CORSMiddleware`: For enabling Cross-Origin Resource Sharing.
+Make sure to install the following libraries before running the application:
 
-2. **CORS Configuration:**
-   The application allows all origins, methods, and headers to access the API, making it accessible from any domain.
+```bash
+pip install -r requirements.txt
+```
 
-3. **Static Dataset:**
-   A pairwise comparison matrix (`STATIC_DATASET`) is defined as a NumPy array, representing criteria weights for the AHP calculation. 
+## Application Setup
 
-   ```python
-   STATIC_DATASET = np.array([
-       [1,     1/3,   1/5,   1,     1/4,   1/2,   3],   # g1
-       [3,     1,     1/2,   2,     1/3,   3,     3],   # g2
-       [5,     2,     1,     4,     5,     6,     5],   # g3
-       [1,     1/2,   1/4,   1,     1/4,   1,     2],   # g4
-       [4,     3,     1/5,   4,     1,     3,     2],   # g5
-       [2,     1/3,   1/6,   1,     1/3,   1,     1/3], # g6
-       [1/3,   1/3,   1/5,   1/2,   1/2,   3,     1]    # g7
-   ])
-   ```
+The application is initialized with CORS middleware to allow cross-origin requests.
 
-4. **Input Data Model:**
-   An input model `AHPRequest` is defined, using `BaseModel` from `pydantic`. It contains:
-   - `weight_derivation`: Specifies the method for deriving weights, with options: `'mean'`, `'geometric'`, or `'max_eigen'`. The default is `'geometric'`.
+```python
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import numpy as np
+from pyDecision.algorithm import ahp_method, fuzzy_ahp_method, ppf_ahp_method
 
-5. **API Endpoint:**
-   The endpoint `/calculate-ahp/` is defined to perform the AHP calculation:
-   - It accepts a POST request with a JSON payload matching the `AHPRequest` model.
-   - Validates the `weight_derivation` input, ensuring it is one of the allowed values.
-   - Calculates weights and consistency ratio using the AHP method from the `pyDecision` library.
-   - Rounds the weights and consistency ratio to three and two decimal places, respectively.
-   - Provides a message indicating whether the solution is consistent based on the consistency ratio (`rc`).
-   - Converts the static dataset to a list for easy JSON serialization in the response.
+app = FastAPI()
 
-## Endpoint: `/calculate-ahp/`
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+```
 
-- **Method**: POST
-- **Request Body**:
-  ```json
-  {
-    "weight_derivation": "geometric"
-  }
-  ```
-- **Response**:
-  - Returns a JSON object with the following fields:
-    - `"weights"`: A list of rounded weight values.
-    - `"consistency_ratio"`: The rounded consistency ratio.
-    - `"consistency_message"`: A message indicating whether the solution is consistent.
-    - `"dataset"`: The original dataset in list format.
+## Static Dataset for AHP
 
-## Example Response
+The application defines a static dataset for AHP calculations:
+
+```python
+dataset1 = np.array([
+    [1, 1/3, 1/5, 1, 1/4, 1/2, 3],
+    [3, 1, 1/2, 2, 1/3, 3, 3],
+    [5, 2, 1, 4, 5, 6, 5],
+    [1, 1/2, 1/4, 1, 1/4, 1, 2],
+    [4, 3, 1/5, 4, 1, 3, 2],
+    [2, 1/3, 1/6, 1, 1/3, 1, 1/3],
+    [1/3, 1/3, 1/5, 1/2, 1/2, 3, 1]
+])
+```
+
+## AHP Request Model
+
+The `AHPRequest` model defines the structure for incoming requests, specifying the weight derivation method.
+
+```python
+class AHPRequest(BaseModel):
+    weight_derivation: str = 'geometric'  # Options: 'mean', 'geometric', 'max_eigen'
+```
+
+## AHP Calculation Endpoint
+
+The `/calculate-ahp/` endpoint processes AHP calculations based on the provided dataset.
+
+### Request Example
 
 ```json
 {
-  "weights": [0.113, 0.226, 0.345, 0.087, 0.146, 0.044, 0.038],
-  "consistency_ratio": 0.05,
-  "consistency_message": "The solution is consistent",
-  "dataset": [
-    [1, 0.333, 0.2, 1, 0.25, 0.5, 3],
-    [3, 1, 0.5, 2, 0.333, 3, 3],
-    [5, 2, 1, 4, 5, 6, 5],
-    [1, 0.5, 0.25, 1, 0.25, 1, 2],
-    [4, 3, 0.2, 4, 1, 3, 2],
-    [2, 0.333, 0.167, 1, 0.333, 1, 0.333],
-    [0.333, 0.333, 0.2, 0.5, 0.5, 3, 1]
-  ]
+    "weight_derivation": "geometric"
 }
 ```
 
-6. **Fuzzy AHP Method:**
-   The fuzzy AHP method allows for more nuanced comparisons by using fuzzy numbers to represent uncertainties in judgments. This method is particularly useful when exact values are difficult to determine, enabling decision-makers to express their preferences in a range rather than as precise numbers. 
-
-   In this application, a second dataset is used for fuzzy AHP calculations, which consists of fuzzy pairwise comparisons.
-
-   ```python
-   dataset = [
-       [(1, 1, 1), (4, 5, 6), (3, 4, 5), (6, 7, 8)],   # g1
-       [(1/6, 1/5, 1/4), (1, 1, 1), (1/3, 1/2, 1), (2, 3, 4)],   # g2
-       [(1/5, 1/4, 1/3), (1, 2, 3), (1, 1, 1), (2, 3, 4)],   # g3
-       [(1/8, 1/7, 1/6), (1/4, 1/3, 1/2), (1/4, 1/3, 1/2), (1, 1, 1)]    # g4
-   ]
-   ```
-
-## Endpoint: `/fuzzy-ahp`
-
-- **Method**: GET
-- **Response**:
-  - Returns a JSON object with the following fields:
-    - `"dataset"`: The dataset used for calculations.
-    - `"fuzzy_weights"`: Fuzzy weights rounded to three decimal places.
-    - `"crisp_weights"`: Crisp weights rounded to three decimal places.
-    - `"normalized_weights"`: Normalized weights rounded to three decimal places.
-    - `"consistency_ratio"`: The consistency ratio rounded to two decimal places.
-    - `"consistency_message"`: A message indicating whether the solution is consistent.
-
-## Example Response for Fuzzy AHP
+### Response Example
 
 ```json
 {
-  "dataset": [
+    "weights": [0.123, 0.234, 0.345, 0.456, 0.567, 0.678, 0.789],
+    "consistency_ratio": 0.05,
+    "consistency_message": "The solution is consistent",
+    "dataset1": [[1, 0.33, 0.2, 1, 0.25, 0.5, 3], ...]
+}
+```
+
+### Error Handling
+
+If the weight derivation option is invalid or an error occurs during calculations, appropriate HTTP exceptions will be raised.
+
+## Fuzzy AHP Calculation
+
+The application also includes an endpoint for fuzzy AHP calculations using a fixed dataset.
+
+### Static Dataset for Fuzzy AHP
+
+```python
+dataset2 = [
     [(1, 1, 1), (4, 5, 6), (3, 4, 5), (6, 7, 8)],
     [(1/6, 1/5, 1/4), (1, 1, 1), (1/3, 1/2, 1), (2, 3, 4)],
     [(1/5, 1/4, 1/3), (1, 2, 3), (1, 1, 1), (2, 3, 4)],
     [(1/8, 1/7, 1/6), (1/4, 1/3, 1/2), (1/4, 1/3, 1/2), (1, 1, 1)]
-  ],
-  "fuzzy_weights": [[0.2, 0.3, 0.5], [0.1, 0.2, 0.7]],
-  "crisp_weights": [0.15, 0.25, 0.45, 0.15],
-  "normalized_weights": [0.15, 0.25, 0.45, 0.15],
-  "consistency_ratio": 0.08,
-  "consistency_message": "The solution is consistent"
+]
+```
+
+### Fuzzy AHP Endpoint
+
+The `/fuzzy-ahp` endpoint processes fuzzy AHP calculations.
+
+### Response Example
+
+```json
+{
+    "dataset2": [[(1, 1, 1), ...], ...],
+    "fuzzy_weights": [[0.123, 0.234, 0.345], ...],
+    "crisp_weigths": [0.456, 0.567, 0.678],
+    "normalized_weights": [0.789, 0.890, 0.901],
+    "consistency_ratio": 0.05,
+    "consistency_message": "The solution is consistent"
 }
 ```
 
-This application provides a straightforward way to perform AHP calculations using predefined pairwise comparison matrices, making it useful for decision-making scenarios.
+## Pairwise Comparison Fuzzy AHP Calculation
+
+The application also includes an endpoint for pairwise comparison fuzzy AHP calculations.
+
+### Static Dataset for PPF AHP
+
+```python
+dataset3 = [
+    [(0, 0), (3, 1), (1, 4), (1, 3), (1, 3), (4, 2)],
+    [(1, 3), (0, 0), (1, 6), (2, 5), (2, 5), (0, 2)],
+    [(4, 1), (6, 1), (0, 0), (2, 1), (3, 1), (5, 1)],
+    [(3, 1), (5, 2), (1, 2), (0, 0), (2, 1), (7, 2)],
+    [(3, 1), (5, 2), (1, 3), (1, 2), (0, 0), (4, 2)],
+    [(2, 4), (2, 0), (1, 5), (2, 7), (2, 4), (0, 0)]
+]
 ```
 
-Feel free to make any additional changes or let me know if you need further adjustments!
+### PPF AHP Endpoint
+
+The `/ppf-ahp` endpoint processes pairwise comparison fuzzy AHP calculations.
+
+### Response Example
+
+```json
+{
+    "weights": [0.1, 0.2, 0.3, 0.15, 0.25],
+    "consistency_ratio": 0.05,
+    "is_consistent": true,
+    "dataset3": [[(0, 0), (3, 1), ...], ...],
+    "consistency_message": "The solution is consistent."
+}
+```
+
+## Running the Application
+
+To run the application, save the code in a file (e.g., `main.py`) and execute:
+
+```bash
+uvicorn main:app --reload
+```
+
+The application will be available at `http://127.0.0.1:8000`.
+
+## Documentation
+
+You can access the interactive API documentation at `http://127.0.0.1:8000/docs`.
+```
+
+Summary of the Markdown Content:
+
+1. Project Overview: Introduction to the FastAPI application for AHP calculations.
+2. Setup Instructions: Details on required libraries and installation.
+3. Code Structure: Explanation of the setup, including middleware and datasets.
+4. Endpoints: Detailed documentation for each endpoint including request and response examples.
+5. Error Handling: Notes on how errors are managed.
+6. Running Instructions: Instructions for running the application and accessing the API documentation.
+
+Feel free to adjust any specific sections or details as needed!
